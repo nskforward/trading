@@ -9,7 +9,7 @@ type Broker interface {
 	SubscribeOrders() (iter.Seq[Order], error)
 
 	GetPositions() ([]Position, error)
-	SubscribeMyTrades() (iter.Seq[Position], error)
+	SubscribeMyTrades() (iter.Seq[Trade], error)
 
 	PlaceLimitOrder(symbol string, price, size float64, pricePrec, sizePrec int) (Order, error)
 	PlaceMarketOrder(symbol string, size float64, sizePrec int) (Order, error)

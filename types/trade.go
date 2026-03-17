@@ -2,9 +2,9 @@ package types
 
 import "time"
 
-type Quote struct {
+type Trade struct {
 	Time   time.Time
 	Symbol string
-	Ask    float64
-	Bid    float64
+	Price  float64
+	Size   float64
 }

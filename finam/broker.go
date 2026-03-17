@@ -137,15 +137,15 @@ func (b *Broker) PlaceMarketOrder(symbol string, size float64, sizePrec int) (ty
 	return convertOrder(state), nil
 }
 
-func (b *Broker) SubscribeMyTrades() (iter.Seq[types.Position], error) {
+func (b *Broker) SubscribeMyTrades() (iter.Seq[types.Trade], error) {
 	stream, err := b.client.SubscribeMyTrades(context.Background(), b.accountID)
 	if err != nil {
 		return nil, err
 	}
 
-	iterator := func(yield func(types.Position) bool) {
+	iterator := func(yield func(types.Trade) bool) {
 		for in := range stream {
-			if !yield(convertPositionFromTrade(in)) {
+			if !yield(convertAccountTrade(in)) {
 				return
 			}
 		}
@@ -175,13 +175,7 @@ func (b *Broker) SubscribeMarketData(symbols []string) (iter.Seq[types.Quote], e
 	}
 	return func(yield func(types.Quote) bool) {
 		for quote := range stream {
-			in := types.Quote{
-				Symbol: quote.Symbol,
-				Ask:    convertDecimal(quote.Ask),
-				Bid:    convertDecimal(quote.Bid),
-			}
-
-			out := b.quoteCache.Get(in)
+			out := b.quoteCache.Get(convertQuote(quote))
 			if out != nil {
 				if !yield(*out) {
 					return

@@ -47,7 +47,7 @@ func (store *PositionStore) WatchChanges() error {
 	}
 	go func() {
 		for trade := range stream {
-			if trade.Updated.Before(store.started) {
+			if trade.Time.Before(store.started) {
 				continue
 			}
 
@@ -69,13 +69,13 @@ func (store *PositionStore) delete(symbol string) {
 	delete(store.positions, symbol)
 }
 
-func (store *PositionStore) update(trade types.Position) *types.Position {
+func (store *PositionStore) update(trade types.Trade) *types.Position {
 	pos := store.Get(trade.Symbol)
 	if pos == nil {
 		pos = &types.Position{}
 	}
 
-	pos.Merge(trade.Price, trade.Size)
+	pos.Merge(trade)
 	if pos.Symbol == "" {
 		pos.Symbol = trade.Symbol
 		store.set(pos)
