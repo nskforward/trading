@@ -168,12 +168,14 @@ func (b *Broker) SubscribeOrders() (iter.Seq[types.Order], error) {
 	return iterator, nil
 }
 
-func (b *Broker) SubscribeMarketData(symbols []string) (iter.Seq[types.Quote], error) {
+func (b *Broker) SubscribeQuotes(symbols []string) (iter.Seq[types.Quote], error) {
 	stream, err := b.client.SubscribeQuotes(context.Background(), symbols)
 	if err != nil {
 		return nil, err
 	}
+
 	return func(yield func(types.Quote) bool) {
+
 		for quote := range stream {
 			out := b.quoteCache.Get(convertQuote(quote))
 			if out != nil {
@@ -182,6 +184,7 @@ func (b *Broker) SubscribeMarketData(symbols []string) (iter.Seq[types.Quote], e
 				}
 			}
 		}
+
 	}, nil
 }
 

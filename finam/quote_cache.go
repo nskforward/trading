@@ -31,6 +31,7 @@ func (s *quoteCache) Get(in types.Quote) *types.Quote {
 	if in.Bid != cached.Bid || in.Ask != cached.Ask {
 		cached.Ask = in.Ask
 		cached.Bid = in.Bid
+		cached.Time = in.Time
 		return cached
 	}
 

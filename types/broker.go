@@ -15,6 +15,6 @@ type Broker interface {
 	PlaceMarketOrder(symbol string, size float64, sizePrec int) (Order, error)
 	CancelOrder(id string) error
 
-	SubscribeMarketData(symbols []string) (iter.Seq[Quote], error)
+	SubscribeQuotes(symbols []string) (iter.Seq[Quote], error)
 	GetSchedule(symbol string) (*Schedule, error)
 }
