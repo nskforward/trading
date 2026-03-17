@@ -90,9 +90,7 @@ func (store *SubscriptionStore) watch() error {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		if store.marketDataStore.OnQuote(store.onQuote) == 0 {
-			slog.Debug("no quotes")
-		}
+		store.marketDataStore.OnQuote(store.onQuote)
 	}
 
 	return nil

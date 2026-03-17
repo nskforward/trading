@@ -25,16 +25,13 @@ func NewMarketDataStore(broker types.Broker, symbols []string) *MarketDataStore 
 	}
 }
 
-func (store *MarketDataStore) OnQuote(handler func(types.Quote)) int {
-	count := 0
+func (store *MarketDataStore) OnQuote(handler func(types.Quote)) {
 	for i := range store.symbols {
 		q, ok := store.getFreshQuote(i)
 		if ok {
 			handler(q)
-			count++
 		}
 	}
-	return count
 }
 
 func (store *MarketDataStore) WatchChanges() error {
@@ -44,7 +41,7 @@ func (store *MarketDataStore) WatchChanges() error {
 	}
 	go func() {
 		for q := range stream {
-			slog.Debug("new quote from broker", "time", q.Time.Unix(), "ask", q.Ask, "bid", q.Bid)
+			// slog.Debug("new quote from broker", "time", q.Time.Unix(), "ask", q.Ask, "bid", q.Bid)
 			store.setQuote(q)
 		}
 	}()
