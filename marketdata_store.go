@@ -60,6 +60,7 @@ func (store *MarketDataStore) setQuote(quote types.Quote) {
 			store.quotes[i].Time = quote.Time
 			store.quotes[i].Ask = quote.Ask
 			store.quotes[i].Bid = quote.Bid
+
 			slog.Debug("saved quote", "quote_time", store.quotes[i].Time.Unix(), "cache_time", store.times[i].Unix())
 			return
 		}
@@ -83,16 +84,10 @@ func (store *MarketDataStore) getFreshQuote(index int) (types.Quote, bool) {
 
 func initQuoteSlice(symbols []string) []types.Quote {
 	quotes := make([]types.Quote, len(symbols))
-	for i, symbol := range symbols {
-		quotes[i].Symbol = symbol
-	}
 	return quotes
 }
 
 func initTimeSlice(symbols []string) []time.Time {
 	times := make([]time.Time, len(symbols))
-	for i := range symbols {
-		times[i] = time.Now()
-	}
 	return times
 }
