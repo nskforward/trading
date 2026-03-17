@@ -12,11 +12,29 @@ func convertAsset(in *assets.GetAssetResponse) types.Asset {
 	fmt.Println(in.String())
 
 	return types.Asset{
-		Symbol:    in.Ticker,
+		Symbol:    fmt.Sprintf("%s@%s", in.Ticker, in.Mic),
 		PricePrec: int(in.Decimals),
 		LotSize:   convertDecimal(in.LotSize),
 		MinStep:   float64(in.MinStep),
-		Currency:  in.QuoteCurrency,
-		Type:      in.Type,
+		Currency:  convertCurrency(in.QuoteCurrency),
+		Type:      convertAssetType(in.Type),
+	}
+}
+
+func convertCurrency(in string) types.Currency {
+	switch in {
+	case "RUB":
+		return types.RUB
+	default:
+		panic(fmt.Errorf("unknown currency: %s", in))
+	}
+}
+
+func convertAssetType(in string) types.AssetType {
+	switch in {
+	case "EQUITIES":
+		return types.AssetEquities
+	default:
+		panic(fmt.Errorf("unknown asset type: %s", in))
 	}
 }

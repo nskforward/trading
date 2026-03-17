@@ -5,6 +5,18 @@ type Asset struct {
 	PricePrec int
 	LotSize   float64
 	MinStep   float64
-	Currency  string
-	Type      string
+	Currency  Currency
+	Type      AssetType
 }
+
+type AssetType string
+
+const (
+	AssetEquities AssetType = "equities"
+)
+
+type Currency string
+
+const (
+	RUB Currency = "rub"
+)
