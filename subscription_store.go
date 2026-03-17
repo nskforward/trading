@@ -95,7 +95,7 @@ func (store *SubscriptionStore) SubscribeAndWatch() error {
 				}
 			}
 		})
-		if count > 0 {
+		if count == 0 {
 			slog.Debug("no quotes")
 		}
 	}
