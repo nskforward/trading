@@ -82,24 +82,31 @@ func (store *SubscriptionStore) SubscribeAndWatch() error {
 
 	slog.Debug("successfully initialized strategies")
 
+	return store.watch()
+}
+
+func (store *SubscriptionStore) watch() error {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		count := store.marketDataStore.Handle(func(q types.Quote) {
-			sub := store.get(q.Symbol)
-			if sub != nil {
-				err := sub.Broadcast(store.broker, q)
-				if err != nil {
-					slog.Error(err.Error())
-				}
-			}
-		})
-		if count == 0 {
+		if store.marketDataStore.OnQuote(store.onQuote) == 0 {
 			slog.Debug("no quotes")
 		}
 	}
+
 	return nil
+}
+
+func (store *SubscriptionStore) onQuote(q types.Quote) {
+	sub := store.get(q.Symbol)
+	if sub == nil {
+		return
+	}
+	err := sub.Broadcast(store.broker, q)
+	if err != nil {
+		slog.Error(err.Error())
+	}
 }
 
 func (store *SubscriptionStore) get(symbol string) *Subscription {

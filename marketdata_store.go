@@ -25,7 +25,7 @@ func NewMarketDataStore(broker types.Broker, symbols []string) *MarketDataStore 
 	}
 }
 
-func (store *MarketDataStore) Handle(handler func(types.Quote)) int {
+func (store *MarketDataStore) OnQuote(handler func(types.Quote)) int {
 	count := 0
 	for i := range store.symbols {
 		q, ok := store.getFreshQuote(i)
@@ -55,12 +55,14 @@ func (store *MarketDataStore) setQuote(quote types.Quote) {
 	store.mx.Lock()
 	defer store.mx.Unlock()
 
-	for i, v := range store.quotes {
-		if v.Symbol == quote.Symbol {
+	for i, v := range store.symbols {
+		if v == quote.Symbol {
 			store.quotes[i] = quote
-			break
+			return
 		}
 	}
+
+	slog.Warn("found quote with unsubscribed symbol", "symbol", quote.Symbol)
 }
 
 func (store *MarketDataStore) getFreshQuote(index int) (types.Quote, bool) {
