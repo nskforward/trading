@@ -10,7 +10,7 @@ type Position struct {
 	Price  float64
 }
 
-func (p *Position) Merge(trade Trade) {
+func (p *Position) Merge(asset Asset, trade Trade) {
 	if trade.Size == 0 {
 		return
 	}
@@ -26,7 +26,13 @@ func (p *Position) Merge(trade Trade) {
 		totalSize := p.Size + trade.Size
 		// Средневзвешенная цена
 		avgPrice := (p.Size*p.Price + trade.Size*trade.Price) / totalSize
-		p.Price = math.Round(avgPrice*100) / 100
+
+		multiplier := float64(1)
+		for range asset.PricePrec {
+			multiplier = multiplier * 10
+		}
+
+		p.Price = math.Round(avgPrice*multiplier) / multiplier
 		p.Size = totalSize
 		return
 	}

@@ -32,6 +32,14 @@ func NewBroker() *Broker {
 	}
 }
 
+func (b *Broker) GetAsset(symbol string) (types.Asset, error) {
+	resp, err := b.client.GetAsset(b.accountID, symbol)
+	if err != nil {
+		return types.Asset{}, err
+	}
+	return convertAsset(resp), nil
+}
+
 func (b *Broker) GetPositions() ([]types.Position, error) {
 	resp, err := b.client.GetAccount(b.accountID)
 	if err != nil {

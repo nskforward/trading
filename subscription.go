@@ -12,9 +12,10 @@ type Subscription struct {
 	scheduleStore   *ScheduleStore
 	positionStore   *PositionStore
 	limitOrderStore *LimitOrderStore
+	assetStore      *AssetStore
 }
 
-func NewSubscription(scheduleStore *ScheduleStore, positionStore *PositionStore, limitOrderStore *LimitOrderStore) *Subscription {
+func NewSubscription(scheduleStore *ScheduleStore, positionStore *PositionStore, limitOrderStore *LimitOrderStore, assetStore *AssetStore) *Subscription {
 	return &Subscription{
 		scheduleStore:   scheduleStore,
 		limitOrderStore: limitOrderStore,
@@ -46,9 +47,15 @@ func (s *Subscription) Broadcast(broker types.Broker, quote types.Quote) error {
 	}
 
 	for _, strategy := range s.strategies {
-		err := strategy.OnEvent(types.Event{
+		asset, err := s.assetStore.Get(quote.Symbol)
+		if err != nil {
+			return err
+		}
+
+		err = strategy.OnEvent(types.Event{
 			Quote:    quote,
 			Broker:   broker,
+			Asset:    asset,
 			Session:  session,
 			Position: position,
 			Orders:   s.limitOrderStore.Get(quote.Symbol),

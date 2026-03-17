@@ -10,17 +10,19 @@ import (
 )
 
 type PositionStore struct {
-	broker    types.Broker
-	positions map[string]*types.Position
-	mx        sync.RWMutex
-	started   time.Time
+	broker     types.Broker
+	positions  map[string]*types.Position
+	mx         sync.RWMutex
+	started    time.Time
+	assetStore *AssetStore
 }
 
-func NewPositionStore(broker types.Broker) *PositionStore {
+func NewPositionStore(broker types.Broker, assetStore *AssetStore) *PositionStore {
 	return &PositionStore{
-		broker:    broker,
-		positions: make(map[string]*types.Position),
-		started:   time.Now(),
+		broker:     broker,
+		positions:  make(map[string]*types.Position),
+		started:    time.Now(),
+		assetStore: assetStore,
 	}
 }
 
@@ -53,7 +55,11 @@ func (store *PositionStore) WatchChanges() error {
 
 			slog.Debug("found trade", "symbol", trade.Symbol, "size", trade.Size, "price", trade.Price)
 
-			pos := store.update(trade)
+			pos, err := store.update(trade)
+			if err != nil {
+				slog.Error("position chnage failed", "error", err.Error())
+				continue
+			}
 
 			if pos.Size == 0 {
 				store.delete(pos.Symbol)
@@ -69,19 +75,25 @@ func (store *PositionStore) delete(symbol string) {
 	delete(store.positions, symbol)
 }
 
-func (store *PositionStore) update(trade types.Trade) *types.Position {
+func (store *PositionStore) update(trade types.Trade) (*types.Position, error) {
 	pos := store.Get(trade.Symbol)
 	if pos == nil {
 		pos = &types.Position{}
 	}
 
-	pos.Merge(trade)
+	asset, err := store.assetStore.Get(trade.Symbol)
+	if err != nil {
+		return nil, err
+	}
+
+	pos.Merge(asset, trade)
+
 	if pos.Symbol == "" {
 		pos.Symbol = trade.Symbol
 		store.set(pos)
 	}
 
-	return pos
+	return pos, nil
 }
 
 func (store *PositionStore) set(position *types.Position) {

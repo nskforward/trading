@@ -15,16 +15,21 @@ type SubscriptionStore struct {
 	positionStore   *PositionStore
 	limitOrderStore *LimitOrderStore
 	marketDataStore *MarketDataStore
+	assetStore      *AssetStore
 	symbols         []string
 	subscriptions   []*Subscription
 }
 
 func NewSubscriptionStore(broker types.Broker) *SubscriptionStore {
+
+	assetStore := NewAssetStore(broker)
+
 	return &SubscriptionStore{
 		broker:          broker,
 		subscriptions:   make([]*Subscription, 0, 16),
 		scheduleStore:   NewScheduleStore(broker),
-		positionStore:   NewPositionStore(broker),
+		assetStore:      assetStore,
+		positionStore:   NewPositionStore(broker, assetStore),
 		limitOrderStore: NewLimitOrderStore(broker),
 		symbols:         make([]string, 0, 32),
 	}
@@ -123,7 +128,7 @@ func (store *SubscriptionStore) getOrCreate(symbol string) *Subscription {
 		}
 	}
 	store.symbols = append(store.symbols, symbol)
-	sub := NewSubscription(store.scheduleStore, store.positionStore, store.limitOrderStore)
+	sub := NewSubscription(store.scheduleStore, store.positionStore, store.limitOrderStore, store.assetStore)
 	store.subscriptions = append(store.subscriptions, sub)
 	return sub
 }

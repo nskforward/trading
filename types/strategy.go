@@ -9,6 +9,7 @@ type Strategy interface {
 
 type Event struct {
 	Quote    Quote
+	Asset    Asset
 	Broker   Broker
 	Session  Session
 	Position *Position
