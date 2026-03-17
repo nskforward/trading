@@ -1,6 +1,7 @@
 package trading
 
 import (
+	"log/slog"
 	"sync"
 	"time"
 
@@ -44,6 +45,7 @@ func (store *MarketDataStore) WatchChanges() error {
 	go func() {
 		for q := range stream {
 			store.setQuote(q)
+			slog.Debug("quote from broker", "symbol", q.Symbol)
 		}
 	}()
 	return nil
