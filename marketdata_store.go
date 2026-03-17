@@ -38,7 +38,7 @@ func (store *MarketDataStore) OnQuote(handler func(types.Quote)) int {
 }
 
 func (store *MarketDataStore) WatchChanges() error {
-	stream, err := store.broker.SubscribeMarketData(store.symbols)
+	stream, err := store.broker.SubscribeQuotes(store.symbols)
 	if err != nil {
 		return err
 	}
