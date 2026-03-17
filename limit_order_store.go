@@ -48,7 +48,7 @@ func (store *LimitOrderStore) WatchChanges() error {
 				continue
 			}
 
-			slog.Debug("order change", "symbol", order.Symbol, "size", order.Size, "price", order.Price, "status", order.Status)
+			slog.Debug("found order", "symbol", order.Symbol, "size", order.Size, "price", order.Price, "status", order.Status)
 
 			store.set(order)
 		}

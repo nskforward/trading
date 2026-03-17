@@ -51,17 +51,13 @@ func (store *PositionStore) WatchChanges() error {
 				continue
 			}
 
-			slog.Debug("new trade", "symbol", trade.Symbol, "size", trade.Size, "price", trade.Price)
+			slog.Debug("found trade", "symbol", trade.Symbol, "size", trade.Size, "price", trade.Price)
 
 			pos := store.update(trade)
 
-			slog.Debug("position updated", "symbol", pos.Symbol, "size", pos.Size, "price", pos.Price)
-
 			if pos.Size == 0 {
 				store.delete(pos.Symbol)
-				slog.Debug("position deleted")
 			}
-
 		}
 	}()
 	return nil

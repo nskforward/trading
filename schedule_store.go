@@ -34,7 +34,7 @@ func (store *ScheduleStore) CurrentSession(symbol string) (types.Session, error)
 
 	session, ok := schedule.Current()
 	if !ok {
-		return types.Session{}, fmt.Errorf("broker returned schedule that does not contain the session with interaval of current timestamp")
+		return types.Session{}, fmt.Errorf("broker returned schedule that does not contain the session with interval of current timestamp")
 	}
 
 	store.schedules[symbol] = schedule
