@@ -44,8 +44,8 @@ func (store *MarketDataStore) WatchChanges() error {
 	}
 	go func() {
 		for q := range stream {
-			store.setQuote(q)
 			slog.Debug("quote from broker", "symbol", q.Symbol)
+			store.setQuote(q)
 		}
 	}()
 	return nil
@@ -58,6 +58,7 @@ func (store *MarketDataStore) setQuote(quote types.Quote) {
 	for i, v := range store.symbols {
 		if v == quote.Symbol {
 			store.quotes[i] = quote
+			slog.Debug("saved quote", "quote_time", store.quotes[i].Time.Unix(), "cache_time", store.times[i].Unix())
 			return
 		}
 	}
