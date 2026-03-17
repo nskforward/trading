@@ -46,7 +46,7 @@ func (s *Subscription) Broadcast(broker types.Broker, quote types.Quote) error {
 	}
 
 	for _, strategy := range s.strategies {
-		err := strategy.OnEvent(types.EventContext{
+		err := strategy.OnEvent(types.Event{
 			Quote:    quote,
 			Broker:   broker,
 			Session:  session,
@@ -54,7 +54,7 @@ func (s *Subscription) Broadcast(broker types.Broker, quote types.Quote) error {
 			Orders:   s.limitOrderStore.Get(quote.Symbol),
 		})
 		if err != nil {
-			return fmt.Errorf("an error occurred during strategy (%s) handling of quote: %w", strategy.ID(), err)
+			return fmt.Errorf("strategy (%s) returned an error on event: %w", strategy.ID(), err)
 		}
 	}
 	return nil

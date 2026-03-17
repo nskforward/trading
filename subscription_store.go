@@ -3,25 +3,26 @@ package trading
 import (
 	"fmt"
 	"log/slog"
-	"slices"
 	"strings"
+	"time"
 
 	"github.com/nskforward/trading/types"
 )
 
 type SubscriptionStore struct {
 	broker          types.Broker
-	subscriptions   map[string]*Subscription
 	scheduleStore   *ScheduleStore
 	positionStore   *PositionStore
 	limitOrderStore *LimitOrderStore
+	marketDataStore *MarketDataStore
 	symbols         []string
+	subscriptions   []*Subscription
 }
 
 func NewSubscriptionStore(broker types.Broker) *SubscriptionStore {
 	return &SubscriptionStore{
 		broker:          broker,
-		subscriptions:   make(map[string]*Subscription),
+		subscriptions:   make([]*Subscription, 0, 16),
 		scheduleStore:   NewScheduleStore(broker),
 		positionStore:   NewPositionStore(broker),
 		limitOrderStore: NewLimitOrderStore(broker),
@@ -29,7 +30,7 @@ func NewSubscriptionStore(broker types.Broker) *SubscriptionStore {
 	}
 }
 
-func (store *SubscriptionStore) Init() error {
+func (store *SubscriptionStore) InitStrategies() error {
 	if len(store.subscriptions) == 0 {
 		return fmt.Errorf("no subscriptions")
 	}
@@ -50,9 +51,6 @@ func (store *SubscriptionStore) AddStrategy(strategy types.Strategy) error {
 		if err != nil {
 			return err
 		}
-		if !slices.Contains(store.symbols, symbol) {
-			store.symbols = append(store.symbols, symbol)
-		}
 	}
 	return nil
 }
@@ -69,40 +67,58 @@ func (store *SubscriptionStore) SubscribeAndWatch() error {
 		return err
 	}
 
-	stream, err := store.broker.SubscribeMarketData(store.symbols)
+	store.marketDataStore = NewMarketDataStore(store.broker, store.symbols)
+	err = store.marketDataStore.WatchChanges()
 	if err != nil {
 		return err
 	}
 
 	slog.Debug("successfully subscribed for market data", "symbols", strings.Join(store.symbols, ", "))
 
-	for q := range stream {
-		sub := store.get(q.Symbol)
-		if sub == nil {
-			continue
-		}
-		err := sub.Broadcast(store.broker, q)
-		if err != nil {
-			slog.Error(err.Error())
+	err = store.InitStrategies()
+	if err != nil {
+		return fmt.Errorf("strategies init failed: %w", err)
+	}
+
+	slog.Debug("successfully initialized strategies")
+
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		count := store.marketDataStore.Handle(func(q types.Quote) {
+			sub := store.get(q.Symbol)
+			if sub != nil {
+				err := sub.Broadcast(store.broker, q)
+				if err != nil {
+					slog.Error(err.Error())
+				}
+			}
+		})
+		if count > 0 {
+			slog.Debug("no quotes")
 		}
 	}
 	return nil
 }
 
 func (store *SubscriptionStore) get(symbol string) *Subscription {
-	s, ok := store.subscriptions[symbol]
-	if ok {
-		return s
+	for i, v := range store.symbols {
+		if v == symbol {
+			return store.subscriptions[i]
+		}
 	}
 	return nil
 }
 
 func (store *SubscriptionStore) getOrCreate(symbol string) *Subscription {
-	s, ok := store.subscriptions[symbol]
-	if ok {
-		return s
+	for i, v := range store.symbols {
+		if v == symbol {
+			return store.subscriptions[i]
+		}
 	}
-	s = NewSubscription(store.scheduleStore, store.positionStore, store.limitOrderStore)
-	store.subscriptions[symbol] = s
-	return s
+	store.symbols = append(store.symbols, symbol)
+	sub := NewSubscription(store.scheduleStore, store.positionStore, store.limitOrderStore)
+	store.subscriptions = append(store.subscriptions, sub)
+	return sub
 }

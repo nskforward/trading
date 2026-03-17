@@ -1,8 +1,6 @@
 package trading
 
 import (
-	"log/slog"
-
 	"github.com/nskforward/trading/types"
 )
 
@@ -29,13 +27,5 @@ func (c *Core) AddStrategy(strategies ...types.Strategy) error {
 }
 
 func (c *Core) Run() error {
-
-	err := c.store.Init()
-	if err != nil {
-		return err
-	}
-
-	slog.Info("successfully initialized all strategies")
-
 	return c.store.SubscribeAndWatch()
 }
