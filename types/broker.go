@@ -5,6 +5,9 @@ import (
 )
 
 type Broker interface {
+	BrokerID() string
+	AccountID() string
+
 	GetOrders() ([]Order, error)
 	GetPositions() ([]Position, error)
 	GetAsset(symbol string) (Asset, error)

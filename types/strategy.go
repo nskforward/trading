@@ -2,15 +2,15 @@ package types
 
 type Strategy interface {
 	ID() string
+	Init() error
+	Broker() Broker
 	Symbols() []string
-	Init(Broker) error
 	OnEvent(Event) error
 }
 
 type Event struct {
 	Quote    Quote
 	Asset    Asset
-	Broker   Broker
 	Session  Session
 	Position *Position
 	Orders   []Order

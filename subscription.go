@@ -8,7 +8,7 @@ import (
 )
 
 type Subscription struct {
-	strategies      []types.Strategy
+	strategies      []*SubscribedStrategy
 	scheduleStore   *ScheduleStore
 	positionStore   *PositionStore
 	limitOrderStore *LimitOrderStore
@@ -20,61 +20,55 @@ func NewSubscription(scheduleStore *ScheduleStore, positionStore *PositionStore,
 		scheduleStore:   scheduleStore,
 		limitOrderStore: limitOrderStore,
 		positionStore:   positionStore,
-		strategies:      make([]types.Strategy, 0, 16),
+		strategies:      make([]*SubscribedStrategy, 0, 16),
 		assetStore:      assetStore,
 	}
 }
 
 func (s *Subscription) AddStrategy(strategy types.Strategy) error {
-	for _, existing := range s.strategies {
-		if existing.ID() == strategy.ID() {
+	for _, v := range s.strategies {
+		if v.strategy.ID() == strategy.ID() {
 			return fmt.Errorf("strategy '%s' already added before", strategy.ID())
 		}
 	}
-	s.strategies = append(s.strategies, strategy)
+	s.strategies = append(s.strategies, NewSubscribedStrategy(s, strategy))
 	return nil
 }
 
-func (s *Subscription) Broadcast(broker types.Broker, quote types.Quote) error {
+func (s *Subscription) Broadcast(quote types.Quote) error {
+	for _, v := range s.strategies {
+		v.Enqueue(quote)
+	}
+	return nil
+}
+
+func (s *Subscription) Event(quote types.Quote) (types.Event, error) {
 	session, err := s.scheduleStore.CurrentSession(quote.Symbol)
 	if err != nil {
-		return err
+		return types.Event{}, err
 	}
 
-	var position *types.Position
-	loadedPosition := s.positionStore.Get(quote.Symbol)
-	if loadedPosition != nil {
-		position = loadedPosition
+	asset, err := s.assetStore.Get(quote.Symbol)
+	if err != nil {
+		return types.Event{}, err
 	}
 
-	for _, strategy := range s.strategies {
-		asset, err := s.assetStore.Get(quote.Symbol)
-		if err != nil {
-			return err
-		}
-
-		err = strategy.OnEvent(types.Event{
-			Quote:    quote,
-			Broker:   broker,
-			Asset:    asset,
-			Session:  session,
-			Position: position,
-			Orders:   s.limitOrderStore.Get(quote.Symbol),
-		})
-		if err != nil {
-			return fmt.Errorf("strategy (%s) returned an error on event: %w", strategy.ID(), err)
-		}
-	}
-	return nil
+	return types.Event{
+		Quote:    quote,
+		Asset:    asset,
+		Session:  session,
+		Position: s.positionStore.Get(quote.Symbol),
+		Orders:   s.limitOrderStore.Get(quote.Symbol),
+	}, nil
 }
 
-func (s *Subscription) Init(broker types.Broker) error {
-	for _, strategy := range s.strategies {
-		err := strategy.Init(broker)
+func (s *Subscription) Init() error {
+	for _, v := range s.strategies {
+		err := v.strategy.Init()
 		if err != nil {
-			return fmt.Errorf("strategy '%s' init failed: %w", strategy.ID(), err)
+			return fmt.Errorf("strategy '%s' init failed: %w", v.strategy.ID(), err)
 		}
-		slog.Debug("successfully initialized strategy", "id", strategy.ID())
+		slog.Debug("successfully initialized strategy", "id", v.strategy.ID())
 	}
 	return nil
 }
