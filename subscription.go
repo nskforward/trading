@@ -21,6 +21,7 @@ func NewSubscription(scheduleStore *ScheduleStore, positionStore *PositionStore,
 		limitOrderStore: limitOrderStore,
 		positionStore:   positionStore,
 		strategies:      make([]types.Strategy, 0, 16),
+		assetStore:      assetStore,
 	}
 }
 
